@@ -129,6 +129,30 @@ export const clearChat = async (req, res) => {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
 
+    // Find all messages that contain images first
+    const messagesWithImages = await Message.find({
+      $or: [
+        { senderId: myId, receiverId: userToChatId },
+        { senderId: userToChatId, receiverId: myId },
+      ],
+      image: { $exists: true, $ne: "" },
+    });
+
+    // Delete images from Cloudinary
+    for (const msg of messagesWithImages) {
+      if (msg.image) {
+        const publicId = msg.image.split("/").pop().split(".")[0];
+        if (publicId) {
+          try {
+            await cloudinary.uploader.destroy(publicId);
+          } catch (cloudinaryError) {
+            console.error("Failed to delete image from Cloudinary:", cloudinaryError.message);
+          }
+        }
+      }
+    }
+
+    // Now delete messages from database
     await Message.deleteMany({
       $or: [
         { senderId: myId, receiverId: userToChatId },

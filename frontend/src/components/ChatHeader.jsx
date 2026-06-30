@@ -9,12 +9,18 @@ const ChatHeader = () => {
   const handleClearChat = () => {
     if (window.confirm(`Are you sure you want to clear chat history with ${selectedUser.fullName}?`)) {
       clearChat(selectedUser._id);
+      if (document.activeElement) {
+        document.activeElement.blur();
+      }
     }
   };
 
   const handleRemoveContact = () => {
     if (window.confirm(`Are you sure you want to remove ${selectedUser.fullName} from your contacts?`)) {
       removeContact(selectedUser._id);
+      if (document.activeElement) {
+        document.activeElement.blur();
+      }
     }
   };
 
@@ -49,9 +55,9 @@ const ChatHeader = () => {
         <div className="flex items-center gap-2">
           {/* More settings dropdown */}
           <div className="dropdown dropdown-end">
-            <button tabIndex={0} className="btn btn-ghost btn-xs btn-circle">
+            <label tabIndex={0} className="btn btn-ghost btn-xs btn-circle cursor-pointer">
               <MoreVertical className="size-5" />
-            </button>
+            </label>
             <ul
               tabIndex={0}
               className="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-52 border border-base-300 z-50 mt-1"
