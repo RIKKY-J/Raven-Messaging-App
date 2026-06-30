@@ -7,11 +7,44 @@ import { getReceiverSocketId, io } from "../lib/socket.js";
 export const getUsersForSidebar = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
-    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+    const user = await User.findById(loggedInUserId).populate("contacts", "-password");
 
-    res.status(200).json(filteredUsers);
+    res.status(200).json(user.contacts || []);
   } catch (error) {
     console.error("Error in getUsersForSidebar: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const addContact = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const loggedInUserId = req.user._id;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const contactUser = await User.findOne({ email }).select("-password");
+    if (!contactUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (contactUser._id.toString() === loggedInUserId.toString()) {
+      return res.status(400).json({ message: "You cannot add yourself as a contact" });
+    }
+
+    const currentUser = await User.findById(loggedInUserId);
+    if (currentUser.contacts.includes(contactUser._id)) {
+      return res.status(400).json({ message: "Contact already added" });
+    }
+
+    currentUser.contacts.push(contactUser._id);
+    await currentUser.save();
+
+    res.status(200).json(contactUser);
+  } catch (error) {
+    console.error("Error in addContact: ", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -56,6 +89,10 @@ export const sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
+
+    // Auto-add contacts for both users so they can see/reply to each other
+    await User.findByIdAndUpdate(senderId, { $addToSet: { contacts: receiverId } });
+    await User.findByIdAndUpdate(receiverId, { $addToSet: { contacts: senderId } });
 
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {

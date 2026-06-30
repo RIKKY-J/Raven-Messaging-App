@@ -64,5 +64,17 @@ export const useChatStore = create((set, get) => ({
     socket.off("newMessage");
   },
 
+  addContact: async (email) => {
+    try {
+      const res = await axiosInstance.post("/messages/contacts/add", { email });
+      toast.success("Contact added successfully");
+      get().getUsers();
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to add contact");
+      return false;
+    }
+  },
+
   setSelectedUser: (selectedUser) => set({ selectedUser }),
 }));

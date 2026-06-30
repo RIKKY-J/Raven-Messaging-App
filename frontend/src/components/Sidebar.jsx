@@ -2,17 +2,29 @@ import { useEffect, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
-import { Users } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 
 const Sidebar = () => {
-  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } = useChatStore();
+  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, addContact } = useChatStore();
 
   const { onlineUsers } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
     getUsers();
   }, [getUsers]);
+
+  const handleAddContact = async (e) => {
+    e.preventDefault();
+    if (!emailInput.trim()) return;
+    const success = await addContact(emailInput.trim());
+    if (success) {
+      setEmailInput("");
+      setIsAdding(false);
+    }
+  };
 
   const filteredUsers = showOnlineOnly
     ? users.filter((user) => onlineUsers.includes(user._id))
@@ -23,10 +35,35 @@ const Sidebar = () => {
   return (
     <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
       <div className="border-b border-base-300 w-full p-5">
-        <div className="flex items-center gap-2">
-          <Users className="size-6" />
-          <span className="font-medium hidden lg:block">Contacts</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="size-6" />
+            <span className="font-medium hidden lg:block">Contacts</span>
+          </div>
+          <button
+            onClick={() => setIsAdding(!isAdding)}
+            className="btn btn-ghost btn-xs btn-circle hidden lg:grid"
+            title="Add Contact"
+          >
+            <Plus className="size-4" />
+          </button>
         </div>
+
+        {isAdding && (
+          <form onSubmit={handleAddContact} className="mt-3 hidden lg:flex gap-2">
+            <input
+              type="email"
+              placeholder="Enter user email..."
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              className="input input-bordered input-xs flex-1 w-full"
+              required
+            />
+            <button type="submit" className="btn btn-primary btn-xs">
+              Add
+            </button>
+          </form>
+        )}
         {/* TODO: Online filter toggle */}
         <div className="mt-3 hidden lg:flex items-center gap-2">
           <label className="cursor-pointer flex items-center gap-2">
@@ -78,7 +115,9 @@ const Sidebar = () => {
         ))}
 
         {filteredUsers.length === 0 && (
-          <div className="text-center text-zinc-500 py-4">No online users</div>
+          <div className="text-center text-zinc-500 py-4">
+            {showOnlineOnly ? "No online users" : "No contacts yet. Add by email!"}
+          </div>
         )}
       </div>
     </aside>
