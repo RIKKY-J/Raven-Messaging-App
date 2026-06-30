@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User } from "lucide-react";
+import { Camera, Mail, User, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const ProfilePage = () => {
   const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
@@ -24,10 +25,16 @@ const ProfilePage = () => {
   return (
     <div className="h-screen pt-20">
       <div className="max-w-2xl mx-auto p-4 py-8">
-        <div className="bg-base-300 rounded-xl p-6 space-y-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold ">Profile</h1>
-            <p className="mt-2">Your profile information</p>
+        <div className="bg-base-300 rounded-xl p-6 space-y-8 relative">
+          <div className="flex items-center justify-between border-b border-base-100 pb-4">
+            <Link to="/" className="btn btn-ghost btn-sm gap-2">
+              <ArrowLeft className="size-4" />
+              <span>Back</span>
+            </Link>
+            <div className="text-right">
+              <h1 className="text-2xl font-semibold ">Profile</h1>
+              <p className="text-xs text-zinc-400">Your profile information</p>
+            </div>
           </div>
 
           {/* avatar upload section */}
@@ -88,7 +95,7 @@ const ProfilePage = () => {
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between py-2 border-b border-zinc-700">
                 <span>Member Since</span>
-                <span>{authUser.createdAt?.split("T")[0]}</span>
+                <span>{authUser.createdAt ? authUser.createdAt.split("T")[0] : "N/A"}</span>
               </div>
               <div className="flex items-center justify-between py-2">
                 <span>Account Status</span>
