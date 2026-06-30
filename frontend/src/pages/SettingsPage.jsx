@@ -18,27 +18,34 @@ const SettingsPage = () => {
           <p className="text-sm text-base-content/70">Choose a theme for your chat interface</p>
         </div>
 
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+        <div className="grid grid-cols-2 gap-4 max-w-md">
           {THEMES.map((t) => (
             <button
               key={t}
               className={`
-                group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors
-                ${theme === t ? "bg-base-200" : "hover:bg-base-200/50"}
+                group flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200
+                ${theme === t 
+                  ? "bg-base-200 border-primary ring-2 ring-primary/20" 
+                  : "bg-base-100 border-base-300 hover:border-base-400/50 hover:bg-base-200/30"}
               `}
               onClick={() => setTheme(t)}
             >
-              <div className="relative h-8 w-full rounded-md overflow-hidden" data-theme={t}>
-                <div className="absolute inset-0 grid grid-cols-4 gap-px p-1">
+              <div className="relative h-12 w-full rounded-lg overflow-hidden" data-theme={t}>
+                <div className="absolute inset-0 grid grid-cols-4 gap-px p-1.5 bg-base-300/30">
                   <div className="rounded bg-primary"></div>
                   <div className="rounded bg-secondary"></div>
                   <div className="rounded bg-accent"></div>
                   <div className="rounded bg-neutral"></div>
                 </div>
               </div>
-              <span className="text-[11px] font-medium truncate w-full text-center">
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </span>
+              <div className="text-center">
+                <span className="text-sm font-semibold block capitalize">
+                  {t} Theme
+                </span>
+                <span className="text-[11px] text-base-content/60">
+                  {t === "light" ? "WhatsApp Inspired" : "Signal Inspired"}
+                </span>
+              </div>
             </button>
           ))}
         </div>
