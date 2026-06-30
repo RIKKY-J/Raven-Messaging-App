@@ -1,10 +1,22 @@
-import { X, ArrowLeft } from "lucide-react";
+import { X, ArrowLeft, MoreVertical, Trash2, UserMinus } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 
 const ChatHeader = () => {
-  const { selectedUser, setSelectedUser } = useChatStore();
+  const { selectedUser, setSelectedUser, removeContact, clearChat } = useChatStore();
   const { onlineUsers } = useAuthStore();
+
+  const handleClearChat = () => {
+    if (window.confirm(`Are you sure you want to clear chat history with ${selectedUser.fullName}?`)) {
+      clearChat(selectedUser._id);
+    }
+  };
+
+  const handleRemoveContact = () => {
+    if (window.confirm(`Are you sure you want to remove ${selectedUser.fullName} from your contacts?`)) {
+      removeContact(selectedUser._id);
+    }
+  };
 
   return (
     <div className="p-2.5 border-b border-base-300">
@@ -34,10 +46,36 @@ const ChatHeader = () => {
           </div>
         </div>
 
-        {/* Close button */}
-        <button onClick={() => setSelectedUser(null)} className="hidden lg:block">
-          <X />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* More settings dropdown */}
+          <div className="dropdown dropdown-end">
+            <button tabIndex={0} className="btn btn-ghost btn-xs btn-circle">
+              <MoreVertical className="size-5" />
+            </button>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-52 border border-base-300 z-50 mt-1"
+            >
+              <li>
+                <button onClick={handleClearChat} className="text-error flex items-center gap-2 hover:bg-base-300">
+                  <Trash2 className="size-4" />
+                  <span>Clear Chat History</span>
+                </button>
+              </li>
+              <li>
+                <button onClick={handleRemoveContact} className="text-error flex items-center gap-2 hover:bg-base-300">
+                  <UserMinus className="size-4" />
+                  <span>Remove Contact</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Close button */}
+          <button onClick={() => setSelectedUser(null)} className="hidden lg:block btn btn-ghost btn-xs btn-circle">
+            <X className="size-5" />
+          </button>
+        </div>
       </div>
     </div>
   );

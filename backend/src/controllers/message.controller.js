@@ -105,3 +105,40 @@ export const sendMessage = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const removeContact = async (req, res) => {
+  try {
+    const { id: contactId } = req.params;
+    const loggedInUserId = req.user._id;
+
+    const currentUser = await User.findById(loggedInUserId);
+    currentUser.contacts = currentUser.contacts.filter(
+      (id) => id.toString() !== contactId.toString()
+    );
+    await currentUser.save();
+
+    res.status(200).json({ message: "Contact removed successfully" });
+  } catch (error) {
+    console.error("Error in removeContact: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const clearChat = async (req, res) => {
+  try {
+    const { id: userToChatId } = req.params;
+    const myId = req.user._id;
+
+    await Message.deleteMany({
+      $or: [
+        { senderId: myId, receiverId: userToChatId },
+        { senderId: userToChatId, receiverId: myId },
+      ],
+    });
+
+    res.status(200).json({ message: "Chat history cleared successfully" });
+  } catch (error) {
+    console.error("Error in clearChat: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

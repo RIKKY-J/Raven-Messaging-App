@@ -76,5 +76,28 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  removeContact: async (contactId) => {
+    try {
+      await axiosInstance.delete(`/messages/contacts/${contactId}`);
+      toast.success("Contact removed successfully");
+      if (get().selectedUser?._id === contactId) {
+        set({ selectedUser: null });
+      }
+      get().getUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to remove contact");
+    }
+  },
+
+  clearChat: async (userToChatId) => {
+    try {
+      await axiosInstance.delete(`/messages/chat/${userToChatId}`);
+      toast.success("Chat history cleared");
+      set({ messages: [] });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to clear chat");
+    }
+  },
+
   setSelectedUser: (selectedUser) => set({ selectedUser }),
 }));
