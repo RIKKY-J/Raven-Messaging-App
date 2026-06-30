@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { X, ArrowLeft, MoreVertical, Trash2, UserMinus } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
@@ -5,27 +6,24 @@ import { useChatStore } from "../store/useChatStore";
 const ChatHeader = () => {
   const { selectedUser, setSelectedUser, removeContact, clearChat } = useChatStore();
   const { onlineUsers } = useAuthStore();
+  const [confirmType, setConfirmType] = useState(null); // 'clear' | 'remove' | null
 
   const handleClearChat = () => {
-    if (window.confirm(`Are you sure you want to clear chat history with ${selectedUser.fullName}?`)) {
-      clearChat(selectedUser._id);
-      if (document.activeElement) {
-        document.activeElement.blur();
-      }
+    setConfirmType("clear");
+    if (document.activeElement) {
+      document.activeElement.blur();
     }
   };
 
   const handleRemoveContact = () => {
-    if (window.confirm(`Are you sure you want to remove ${selectedUser.fullName} from your contacts?`)) {
-      removeContact(selectedUser._id);
-      if (document.activeElement) {
-        document.activeElement.blur();
-      }
+    setConfirmType("remove");
+    if (document.activeElement) {
+      document.activeElement.blur();
     }
   };
 
   return (
-    <div className="p-2.5 border-b border-base-300">
+    <div className="p-2.5 border-b border-base-300 relative">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Back button for mobile */}
@@ -83,6 +81,38 @@ const ChatHeader = () => {
           </button>
         </div>
       </div>
+
+      {confirmType && (
+        <div className="modal modal-open z-50">
+          <div className="modal-box bg-base-200 border border-base-300 max-w-sm">
+            <h3 className="font-bold text-lg text-base-content">Are you sure?</h3>
+            <p className="py-4 text-sm text-base-content/80">
+              {confirmType === "clear"
+                ? `This will delete all messages and media files in your chat with ${selectedUser.fullName} permanently.`
+                : `This will remove ${selectedUser.fullName} from your contacts list.`}
+            </p>
+            <div className="modal-action gap-2">
+              <button onClick={() => setConfirmType(null)} className="btn btn-ghost btn-sm rounded-lg">
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (confirmType === "clear") {
+                    clearChat(selectedUser._id);
+                  } else {
+                    removeContact(selectedUser._id);
+                  }
+                  setConfirmType(null);
+                }}
+                className="btn btn-error btn-sm rounded-lg"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop bg-black/40" onClick={() => setConfirmType(null)}></div>
+        </div>
+      )}
     </div>
   );
 };
