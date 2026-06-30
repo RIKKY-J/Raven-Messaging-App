@@ -11,15 +11,15 @@ const NoChatSelected = () => {
               className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center
              justify-center animate-bounce p-2"
             >
-              <img src="/crow.png" alt="Crow Logo" className="w-16 h-16 object-contain" />
+              <img src="/raven.png" alt="Raven Logo" className="w-16 h-16 object-contain" />
             </div>
           </div>
         </div>
 
         {/* Welcome Text */}
-        <h2 className="text-2xl font-bold">Welcome to Crow!</h2>
+        <h2 className="text-2xl font-bold">Welcome to Raven!</h2>
         <p className="text-base-content/60">
-          Select a conversation from the sidebar to start chatting
+          Select a conversation from the sidebar to start messaging
         </p>
       </div>
     </div>
