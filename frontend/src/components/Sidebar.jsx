@@ -8,7 +8,6 @@ const Sidebar = () => {
   const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, addContact } = useChatStore();
 
   const { onlineUsers } = useAuthStore();
-  const [showOnlineOnly, setShowOnlineOnly] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
@@ -26,9 +25,7 @@ const Sidebar = () => {
     }
   };
 
-  const filteredUsers = showOnlineOnly
-    ? users.filter((user) => onlineUsers.includes(user._id))
-    : users;
+  const filteredUsers = users;
 
   if (isUsersLoading) return <SidebarSkeleton />;
 
@@ -64,19 +61,7 @@ const Sidebar = () => {
             </button>
           </form>
         )}
-        {/* TODO: Online filter toggle */}
-        <div className="mt-3 flex items-center gap-2">
-          <label className="cursor-pointer flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={showOnlineOnly}
-              onChange={(e) => setShowOnlineOnly(e.target.checked)}
-              className="checkbox checkbox-sm"
-            />
-            <span className="text-sm">Show online only</span>
-          </label>
-          <span className="text-xs text-zinc-500">({onlineUsers.length - 1} online)</span>
-        </div>
+
       </div>
 
       <div className="overflow-y-auto w-full py-3">
