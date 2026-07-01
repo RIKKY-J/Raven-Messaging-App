@@ -2,10 +2,12 @@ import { Buffer } from "buffer";
 import bufferModule from "buffer";
 import dns from "dns";
 
-try {
-  dns.setServers(["8.8.8.8", "8.8.4.4"]);
-} catch (err) {
-  console.warn("Failed to set DNS servers:", err);
+if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+  try {
+    dns.setServers(["8.8.8.8", "8.8.4.4"]);
+  } catch (err) {
+    console.warn("Failed to set DNS servers:", err);
+  }
 }
 
 
