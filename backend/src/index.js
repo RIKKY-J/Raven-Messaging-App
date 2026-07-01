@@ -14,6 +14,8 @@ import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
+connectDB();
+
 const PORT = process.env.PORT;
 const __dirname = path.resolve();
 
@@ -40,5 +42,4 @@ if (process.env.NODE_ENV === "production") {
 
 server.listen(PORT, () => {
   console.log("server is running on PORT:" + PORT);
-  connectDB();
 });
