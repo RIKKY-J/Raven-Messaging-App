@@ -11,6 +11,8 @@ export const useAuthStore = create((set, get) => ({
   isLoggingIn: false,
   isUpdatingProfile: false,
   isCheckingAuth: true,
+  isVerifyingSignup: false,
+  verificationEmail: null,
   onlineUsers: [],
   socket: null,
 
@@ -31,15 +33,45 @@ export const useAuthStore = create((set, get) => ({
   signup: async (data) => {
     set({ isSigningUp: true });
     try {
-      const res = await axiosInstance.post("/auth/signup", data);
-      set({ authUser: res.data });
-      toast.success("Account created successfully");
-      get().connectSocket();
+      await axiosInstance.post("/auth/signup", data);
+      set({ verificationEmail: data.email });
+      toast.success("Verification code sent to your email!");
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Signup failed");
     } finally {
       set({ isSigningUp: false });
     }
+  },
+
+  verifySignup: async (email, code) => {
+    set({ isVerifyingSignup: true });
+    try {
+      const res = await axiosInstance.post("/auth/verify-signup", { email, code });
+      set({ authUser: res.data, verificationEmail: null });
+      toast.success("Account created successfully");
+      get().connectSocket();
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Verification failed");
+      return false;
+    } finally {
+      set({ isVerifyingSignup: false });
+    }
+  },
+
+  resendCode: async (email) => {
+    try {
+      await axiosInstance.post("/auth/resend-code", { email });
+      toast.success("Verification code resent");
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to resend code");
+      return false;
+    }
+  },
+
+  cancelSignup: () => {
+    set({ verificationEmail: null });
   },
 
   login: async (data) => {
