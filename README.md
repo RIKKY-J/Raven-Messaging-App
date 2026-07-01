@@ -10,6 +10,7 @@ Highlights:
 - 🚀 Online user status
 - 👌 Global state management with Zustand
 - 🐞 Error handling both on the server and on the client
+- 📧 Email verification with SMTP
 
 ### Setup .env file
 
