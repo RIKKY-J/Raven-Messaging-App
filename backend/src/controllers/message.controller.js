@@ -53,13 +53,27 @@ export const getMessages = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
+    const { limit = 30, before } = req.query;
 
-    const messages = await Message.find({
+    const parsedLimit = parseInt(limit, 10);
+
+    const query = {
       $or: [
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
-    });
+    };
+
+    if (before) {
+      query.createdAt = { $lt: new Date(before) };
+    }
+
+    // Fetch messages descending (latest first) up to limit, then reverse to chronological order
+    const messages = await Message.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parsedLimit);
+
+    messages.reverse();
 
     res.status(200).json(messages);
   } catch (error) {
@@ -90,9 +104,11 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
-    // Auto-add contacts for both users so they can see/reply to each other
-    await User.findByIdAndUpdate(senderId, { $addToSet: { contacts: receiverId } });
-    await User.findByIdAndUpdate(receiverId, { $addToSet: { contacts: senderId } });
+    // Auto-add contacts for both users in parallel to reduce API response latency
+    await Promise.all([
+      User.findByIdAndUpdate(senderId, { $addToSet: { contacts: receiverId } }),
+      User.findByIdAndUpdate(receiverId, { $addToSet: { contacts: senderId } }),
+    ]);
 
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
@@ -138,19 +154,22 @@ export const clearChat = async (req, res) => {
       image: { $exists: true, $ne: "" },
     });
 
-    // Delete images from Cloudinary
-    for (const msg of messagesWithImages) {
-      if (msg.image) {
-        const publicId = msg.image.split("/").pop().split(".")[0];
-        if (publicId) {
-          try {
-            await cloudinary.uploader.destroy(publicId);
-          } catch (cloudinaryError) {
-            console.error("Failed to delete image from Cloudinary:", cloudinaryError.message);
+    // Delete images from Cloudinary in parallel to avoid sequential network delays
+    const deletePromises = messagesWithImages
+      .map((msg) => {
+        if (msg.image) {
+          const publicId = msg.image.split("/").pop().split(".")[0];
+          if (publicId) {
+            return cloudinary.uploader.destroy(publicId).catch((cloudinaryError) => {
+              console.error("Failed to delete image from Cloudinary:", cloudinaryError.message);
+            });
           }
         }
-      }
-    }
+        return null;
+      })
+      .filter(Boolean);
+
+    await Promise.all(deletePromises);
 
     // Now delete messages from database
     await Message.deleteMany({

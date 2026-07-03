@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { compressImage } from "../lib/image";
 
 const ProfilePage = () => {
   const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
@@ -11,15 +12,14 @@ const ProfilePage = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-
-    reader.readAsDataURL(file);
-
-    reader.onload = async () => {
-      const base64Image = reader.result;
-      setSelectedImg(base64Image);
-      await updateProfile({ profilePic: base64Image });
-    };
+    try {
+      // Compress the profile pic to max 512x512 at 0.8 quality
+      const compressedBase64 = await compressImage(file, 512, 512, 0.8);
+      setSelectedImg(compressedBase64);
+      await updateProfile({ profilePic: compressedBase64 });
+    } catch (error) {
+      console.error("Failed to compress or upload profile image:", error);
+    }
   };
 
   return (

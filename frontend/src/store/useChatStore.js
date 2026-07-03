@@ -9,6 +9,8 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  isLoadingMore: false,
+  hasMoreMessages: true,
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -23,23 +25,50 @@ export const useChatStore = create((set, get) => ({
   },
 
   getMessages: async (userId) => {
-    set({ isMessagesLoading: true });
+    set({ isMessagesLoading: true, hasMoreMessages: true });
     try {
       const res = await axiosInstance.get(`/messages/${userId}`);
-      set({ messages: res.data });
+      set({
+        messages: res.data,
+        hasMoreMessages: res.data.length === 30, // if we fetched a full page, there might be more
+      });
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Failed to get messages");
     } finally {
       set({ isMessagesLoading: false });
     }
   },
+
+  getMoreMessages: async (userId) => {
+    const { messages, isMessagesLoading, isLoadingMore, hasMoreMessages } = get();
+    if (isMessagesLoading || isLoadingMore || !hasMoreMessages || messages.length === 0) return;
+
+    set({ isLoadingMore: true });
+    const oldestMessage = messages[0];
+    const beforeTimestamp = oldestMessage.createdAt;
+
+    try {
+      const res = await axiosInstance.get(`/messages/${userId}?before=${beforeTimestamp}`);
+      const olderMessages = res.data;
+
+      set({
+        messages: [...olderMessages, ...messages],
+        hasMoreMessages: olderMessages.length === 30,
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to load older messages");
+    } finally {
+      set({ isLoadingMore: false });
+    }
+  },
+
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
     try {
       const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
       set({ messages: [...messages, res.data] });
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Failed to send message");
     }
   },
 
@@ -93,11 +122,11 @@ export const useChatStore = create((set, get) => ({
     try {
       await axiosInstance.delete(`/messages/chat/${userToChatId}`);
       toast.success("Chat history cleared");
-      set({ messages: [] });
+      set({ messages: [], hasMoreMessages: false });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to clear chat");
     }
   },
 
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  setSelectedUser: (selectedUser) => set({ selectedUser, hasMoreMessages: true }),
 }));
