@@ -6,6 +6,7 @@ import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime } from "../lib/utils";
+import { File } from "lucide-react";
 
 const ChatContainer = () => {
   const {
@@ -128,13 +129,23 @@ const ChatContainer = () => {
               </time>
             </div>
             <div className="chat-bubble flex flex-col">
-              {message.image && (
+              {message.fileUrl && message.fileType && !message.fileType.startsWith('image/') ? (
+                <a
+                  href={message.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-base-300/50 p-3 rounded-md mb-2 hover:bg-base-300 transition-colors border border-base-300"
+                >
+                  <File className="size-5 text-primary" />
+                  <span className="text-sm underline break-all font-medium">{message.fileName || "Download File"}</span>
+                </a>
+              ) : message.image || message.fileUrl ? (
                 <img
-                  src={message.image}
+                  src={message.image || message.fileUrl}
                   alt="Attachment"
                   className="sm:max-w-[200px] rounded-md mb-2"
                 />
-              )}
+              ) : null}
               {message.text && <p>{message.text}</p>}
             </div>
           </div>

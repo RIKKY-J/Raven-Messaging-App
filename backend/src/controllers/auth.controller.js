@@ -2,7 +2,7 @@ import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import Verification from "../models/verification.model.js";
 import bcrypt from "bcryptjs";
-import cloudinary from "../lib/cloudinary.js";
+import { uploadToS3 } from "../lib/s3.js";
 import nodemailer from "nodemailer";
 
 const transporter = process.env.GMAIL_USER && process.env.GMAIL_PASS
@@ -210,17 +210,17 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
     const userId = req.user._id;
 
-    if (!profilePic) {
+    if (!req.file) {
       return res.status(400).json({ message: "Profile pic is required" });
     }
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+    const { url } = await uploadToS3(req.file.buffer, req.file.mimetype, req.file.originalname);
+    
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { profilePic: uploadResponse.secure_url },
+      { profilePic: url },
       { new: true }
     );
 

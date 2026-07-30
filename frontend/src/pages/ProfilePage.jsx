@@ -3,6 +3,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { compressImage } from "../lib/image";
+import toast from "react-hot-toast";
 
 const ProfilePage = () => {
   const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
@@ -12,13 +13,22 @@ const ProfilePage = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (file.size > 10 * 1024 * 1024) { // Let's enforce 10MB limit for profile pics
+      toast.error("Profile picture must be less than 10MB");
+      return;
+    }
+
     try {
-      // Compress the profile pic to max 512x512 at 0.8 quality
-      const compressedBase64 = await compressImage(file, 512, 512, 0.8);
-      setSelectedImg(compressedBase64);
-      await updateProfile({ profilePic: compressedBase64 });
+      const reader = new FileReader();
+      reader.onload = () => setSelectedImg(reader.result);
+      reader.readAsDataURL(file);
+      
+      const formData = new FormData();
+      formData.append("profilePic", file);
+
+      await updateProfile(formData);
     } catch (error) {
-      console.error("Failed to compress or upload profile image:", error);
+      console.error("Failed to upload profile image:", error);
     }
   };
 

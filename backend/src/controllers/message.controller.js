@@ -1,7 +1,7 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 
-import cloudinary from "../lib/cloudinary.js";
+import { uploadToS3, deleteFromS3 } from "../lib/s3.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
@@ -84,22 +84,28 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    const { text } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
-    let imageUrl;
-    if (image) {
-      // Upload base64 image to cloudinary
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
+    let fileUrl, fileName, fileType;
+    if (req.file) {
+      // Upload file buffer to S3
+      const { url } = await uploadToS3(req.file.buffer, req.file.mimetype, req.file.originalname);
+      fileUrl = url;
+      fileName = req.file.originalname;
+      fileType = req.file.mimetype;
     }
 
     const newMessage = new Message({
       senderId,
       receiverId,
       text,
-      image: imageUrl,
+      fileUrl,
+      fileName,
+      fileType,
+      // Fallback for image backwards compatibility, if it is an image
+      image: (fileType && fileType.startsWith('image/')) ? fileUrl : undefined,
     });
 
     await newMessage.save();
@@ -145,23 +151,28 @@ export const clearChat = async (req, res) => {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
 
-    // Find all messages that contain images first
-    const messagesWithImages = await Message.find({
+    // Find all messages that contain images or files first
+    const messagesWithFiles = await Message.find({
       $or: [
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
-      image: { $exists: true, $ne: "" },
+      $or: [
+        { image: { $exists: true, $ne: "" } },
+        { fileUrl: { $exists: true, $ne: "" } }
+      ]
     });
 
-    // Delete images from Cloudinary in parallel to avoid sequential network delays
-    const deletePromises = messagesWithImages
+    // Delete files from S3 in parallel
+    const deletePromises = messagesWithFiles
       .map((msg) => {
-        if (msg.image) {
-          const publicId = msg.image.split("/").pop().split(".")[0];
-          if (publicId) {
-            return cloudinary.uploader.destroy(publicId).catch((cloudinaryError) => {
-              console.error("Failed to delete image from Cloudinary:", cloudinaryError.message);
+        const urlToDelete = msg.fileUrl || msg.image;
+        if (urlToDelete) {
+          // Extract the key from S3 URL
+          const key = urlToDelete.split("/").pop();
+          if (key) {
+            return deleteFromS3(key).catch((s3Error) => {
+              console.error("Failed to delete file from S3:", s3Error.message);
             });
           }
         }
