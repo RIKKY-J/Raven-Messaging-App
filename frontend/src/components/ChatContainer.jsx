@@ -8,6 +8,29 @@ import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime } from "../lib/utils";
 import { File, Download } from "lucide-react";
 
+// Fetch the remote file as a blob and trigger a browser download.
+// This is required for cross-origin URLs (like AWS S3) where the
+// HTML `download` attribute is silently ignored by the browser.
+const downloadFile = async (url, fileName) => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Network response was not ok");
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName || "download";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error("Download failed:", error);
+    // Fallback: open in new tab
+    window.open(url, "_blank");
+  }
+};
+
 const ChatContainer = () => {
   const {
     messages,
@@ -136,17 +159,13 @@ const ChatContainer = () => {
                   <span className="text-sm break-all font-medium flex-1">
                     {message.fileName || "File"}
                   </span>
-                  <a
-                    href={message.fileUrl}
-                    download={message.fileName || "file"}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => downloadFile(message.fileUrl, message.fileName || "file")}
                     className="btn btn-xs btn-ghost btn-circle shrink-0"
                     title="Download"
-                    onClick={(e) => e.stopPropagation()}
                   >
                     <Download className="size-4" />
-                  </a>
+                  </button>
                 </div>
               ) : message.image || message.fileUrl ? (
                 /* Image attachment with download button */
@@ -156,16 +175,13 @@ const ChatContainer = () => {
                     alt="Attachment"
                     className="sm:max-w-[200px] rounded-md"
                   />
-                  <a
-                    href={message.image || message.fileUrl}
-                    download={message.fileName || "image"}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => downloadFile(message.image || message.fileUrl, message.fileName || "image")}
                     className="absolute bottom-1 right-1 btn btn-xs btn-circle bg-black/50 border-0 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Download Image"
                   >
                     <Download className="size-3" />
-                  </a>
+                  </button>
                 </div>
               ) : null}
               {message.text && <p>{message.text}</p>}
