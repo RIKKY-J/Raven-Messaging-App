@@ -14,7 +14,6 @@ A modern, feature-rich full-stack realtime chat application built with the **MER
 - 📧 **Email Verification**: OTP-based email verification using Nodemailer (with graceful console fallback for local development).
 - ☁️ **AWS S3 Cloud Storage**: Secure media and attachment storage using AWS S3 SDK v3 for profile avatars and file attachments (images, PDFs, documents).
 - 📁 **File & Image Sharing**: Send images and document attachments in chat with automatic client-side image compression and direct browser download support.
-- 🎨 **32 Dynamic Themes**: Theme switcher powered by DaisyUI and TailwindCSS with persistent client state.
 - ⚡ **State Management**: Lightweight, reactive global state using Zustand.
 - 🚀 **Performance & Scalability**: Optimized MongoDB query indexing, API pagination, and lazy asset loading.
 
@@ -24,7 +23,7 @@ A modern, feature-rich full-stack realtime chat application built with the **MER
 
 ### Frontend
 - **Framework**: React 18 + Vite
-- **Styling**: TailwindCSS, DaisyUI (32 themes)
+- **Styling**: TailwindCSS, DaisyUI
 - **State Management**: Zustand
 - **Realtime**: Socket.io-client
 - **Icons & Alerts**: Lucide React, React Hot Toast
